@@ -225,6 +225,14 @@
   $('exportBtn').addEventListener('click', function () { exportCover(); });
   $('exportBtn2').addEventListener('click', function () { exportCover(); });
 
+  // Keyboard shortcut: Ctrl/Cmd+Enter exports at the chosen size.
+  document.addEventListener('keydown', function (ev) {
+    if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') {
+      ev.preventDefault();
+      exportCover();
+    }
+  });
+
   // -- direct manipulation on the preview ----------------------------------
   // Drag moves the photo inside the panel under the pointer; the wheel
   // zooms it. Coordinates are mapped from the displayed canvas back to

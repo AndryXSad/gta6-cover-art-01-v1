@@ -300,6 +300,7 @@ input[type="text"] { width: 100%; }
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 4px 10px;
+  white-space: nowrap;
 }
 
 .canvas-wrap {
