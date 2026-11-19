@@ -1,0 +1,12 @@
+Fonts shipped with Vice Cover Studio (all under this directory):
+
+- LiberationSans-Regular.ttf, LiberationSans-Bold.ttf
+  Liberation Sans, copyright (c) 2012 Red Hat, Inc.
+  Licensed under the SIL Open Font License, Version 1.1 (see OFL.txt).
+
+- NotoSansDisplay-Bold.ttf, NotoSansDisplay-Black.ttf
+  Noto Sans Display, copyright (c) Google Inc.
+  Licensed under the SIL Open Font License, Version 1.1 (see OFL.txt).
+
+The full text of the SIL Open Font License 1.1 is in OFL.txt.
+No Rockstar Games font is used anywhere in this app.

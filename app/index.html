@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vice Cover Studio — GTA-style poster cover maker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">&#9733;</span>
+    <div>
+      <h1>VICE COVER STUDIO</h1>
+      <p>Turn your photo into a sunset-neon poster cover. Offline &mdash; photos never leave your machine.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <label class="size-label" for="exportSize">Export size</label>
+    <select id="exportSize">
+      <option value="1080x1080">1080 &times; 1080 &middot; Square post</option>
+      <option value="1080x1350">1080 &times; 1350 &middot; Portrait post</option>
+      <option value="1920x1080">1920 &times; 1080 &middot; Wide banner</option>
+    </select>
+    <button id="exportBtn" class="btn-primary" type="button">Export PNG</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <section class="panel controls" aria-label="Cover controls">
+    <h2>1 &middot; Your photos</h2>
+    <p class="hint">Add up to three photos. Each panel can show any of them, cropped and positioned your way.</p>
+    <div class="photo-slots">
+      <div class="photo-slot" data-slot="0">
+        <img id="thumb0" alt="Photo 1 preview" src="samples/boulevard.jpg">
+        <div class="slot-actions">
+          <label class="btn-small">Upload<input id="file0" type="file" accept="image/*" hidden></label>
+          <button class="btn-small" type="button" data-sample="samples/boulevard.jpg">Sample: Boulevard</button>
+        </div>
+      </div>
+      <div class="photo-slot" data-slot="1">
+        <img id="thumb1" alt="Photo 2 preview" src="samples/pier.jpg">
+        <div class="slot-actions">
+          <label class="btn-small">Upload<input id="file1" type="file" accept="image/*" hidden></label>
+          <button class="btn-small" type="button" data-sample="samples/pier.jpg">Sample: Pier</button>
+        </div>
+      </div>
+      <div class="photo-slot" data-slot="2">
+        <img id="thumb2" alt="Photo 3 preview" src="samples/boulevard.jpg">
+        <div class="slot-actions">
+          <label class="btn-small">Upload<input id="file2" type="file" accept="image/*" hidden></label>
+          <button class="btn-small" type="button" data-sample="samples/pier.jpg">Sample: Pier</button>
+        </div>
+      </div>
+    </div>
+
+    <h2>2 &middot; Panel layout</h2>
+    <div class="layout-grid" id="layoutGrid">
+      <button type="button" class="layout-btn is-active" data-layout="trio" aria-label="Vice Trio layout">
+        <span class="mini trio"><i></i><i></i><i></i></span>Vice Trio
+      </button>
+      <button type="button" class="layout-btn" data-layout="strip" aria-label="Sunset Strip layout">
+        <span class="mini strip"><i></i><i></i><i></i></span>Sunset Strip
+      </button>
+      <button type="button" class="layout-btn" data-layout="hero" aria-label="Hero and Duo layout">
+        <span class="mini hero"><i></i><i></i><i></i></span>Hero + Duo
+      </button>
+      <button type="button" class="layout-btn" data-layout="quad" aria-label="Four Corners layout">
+        <span class="mini quad"><i></i><i></i><i></i><i></i></span>Four Corners
+      </button>
+    </div>
+
+    <h2>3 &middot; Panels &amp; crop</h2>
+    <p class="hint">Pick a panel, then drag it on the preview to move the photo, or scroll to zoom.</p>
+    <div class="panel-picker" id="panelPicker"></div>
+    <div class="slider-row">
+      <label for="zoomRange">Zoom <span id="zoomVal">1.20&times;</span></label>
+      <input id="zoomRange" type="range" min="1" max="3" step="0.01" value="1.2">
+    </div>
+    <div class="slider-row">
+      <label for="panXRange">Move left / right</label>
+      <input id="panXRange" type="range" min="-1" max="1" step="0.01" value="0">
+    </div>
+    <div class="slider-row">
+      <label for="panYRange">Move up / down</label>
+      <input id="panYRange" type="range" min="-1" max="1" step="0.01" value="0">
+    </div>
+    <div class="slider-row">
+      <label for="photoSelect">Photo in this panel</label>
+      <select id="photoSelect">
+        <option value="0">Photo 1</option>
+        <option value="1">Photo 2</option>
+        <option value="2">Photo 3</option>
+      </select>
+    </div>
+
+    <h2>4 &middot; Colour grade</h2>
+    <div class="grade-grid" id="gradeGrid">
+      <button type="button" class="grade-btn is-active" data-grade="sunset">
+        <span class="swatch sunset"></span>Vice Sunset
+      </button>
+      <button type="button" class="grade-btn" data-grade="neon">
+        <span class="swatch neon"></span>Neon Night
+      </button>
+      <button type="button" class="grade-btn" data-grade="dusk">
+        <span class="swatch dusk"></span>Palm Dusk
+      </button>
+      <button type="button" class="grade-btn" data-grade="noir">
+        <span class="swatch noir"></span>Mono Noir
+      </button>
+    </div>
+
+    <h2>5 &middot; Caption</h2>
+    <label class="field-label" for="titleInput">Main title</label>
+    <input id="titleInput" type="text" value="VICE NIGHTS" maxlength="24" autocomplete="off">
+    <label class="field-label" for="subtitleInput">Subtitle</label>
+    <input id="subtitleInput" type="text" value="YOUR STORY &middot; YOUR CITY" maxlength="48" autocomplete="off">
+    <div class="slider-row">
+      <label for="titleSizeRange">Title size <span id="titleSizeVal">100%</span></label>
+      <input id="titleSizeRange" type="range" min="60" max="150" step="5" value="100">
+    </div>
+    <div class="slider-row">
+      <label for="captionStyle">Lettering</label>
+      <select id="captionStyle">
+        <option value="solid">Solid + outline</option>
+        <option value="neon">Neon glow</option>
+        <option value="chrome">Chrome band</option>
+      </select>
+    </div>
+    <div class="slider-row">
+      <label for="captionPos">Caption position</label>
+      <select id="captionPos">
+        <option value="bottom">Bottom</option>
+        <option value="top">Top</option>
+      </select>
+    </div>
+    <button id="exportBtn2" class="btn-primary wide" type="button">Export PNG</button>
+    <p id="exportNote" class="hint" role="status"></p>
+  </section>
+
+  <section class="panel preview" aria-label="Live preview">
+    <div class="preview-head">
+      <h2>Live preview</h2>
+      <span id="previewDims" class="dims">1080 &times; 1080</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="stage" width="960" height="960"></canvas>
+    </div>
+    <p class="hint">Drag a panel to reposition its photo &middot; scroll over it to zoom &middot; everything renders on your device.</p>
+    <p class="fineprint">Original artwork made by this app. No Rockstar Games logos, artwork, characters or fonts.
+      Type is Liberation Sans, shipped under the SIL Open Font License 1.1 (see fonts/OFL.txt).
+      Sample photos were made with an image model and are free to use.</p>
+  </section>
+</main>
+
+<script src="src/cover.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
