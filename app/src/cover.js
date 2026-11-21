@@ -1,304 +1,326 @@
-// Vice Cover Studio — cover renderer.
-//
-// Paints a multi-panel, sunset/neon-graded poster cover onto any 2d
-// canvas from the editor state: the photos, each panel's crop, the
-// layout, the grade and the caption. Nothing here touches the network:
-// only the photos the user loaded and the fonts shipped in app/fonts/.
+// Vice Cover Studio — cover renderer (pure canvas, no network).
+// This module only draws. It knows nothing about the DOM: give it a 2d
+// context, the current poster state and a target size, and it paints the
+// whole cover: photo panels, colour grade, caption lettering, vignette.
 
-(function () {
-  'use strict';
+export const GUTTER = 6; // px gap between panels at 1080 wide, scaled
 
-  // One grade is the cover's whole colour story: the sky wash laid over
-  // every photo, the panel frame, the caption ink and its glow.
-  var GRADES = {
-    sunset: {
-      wash: ['rgba(255,122,26,0.34)', 'rgba(255,46,136,0.30)', 'rgba(123,47,247,0.22)'],
-      frame: '#ffd9a0',
-      title: '#fff3d6',
-      titleStroke: '#2a0a2e',
-      sub: '#ffe9a8',
-      badge: '#ff7a1a',
-      vignette: 'rgba(42,10,46,0.55)',
-    },
-    neon: {
-      wash: ['rgba(34,211,238,0.30)', 'rgba(168,85,247,0.30)', 'rgba(255,46,136,0.28)'],
-      frame: '#a5f3fc',
-      title: '#eafcff',
-      titleStroke: '#12042b',
-      sub: '#a5f3fc',
-      badge: '#22d3ee',
-      vignette: 'rgba(10,4,43,0.55)',
-    },
-    dusk: {
-      wash: ['rgba(255,197,61,0.26)', 'rgba(176,77,255,0.32)', 'rgba(43,16,85,0.30)'],
-      frame: '#e9d5ff',
-      title: '#fdf4ff',
-      titleStroke: '#1c0a33',
-      sub: '#fde68a',
-      badge: '#ffc53d',
-      vignette: 'rgba(28,10,51,0.55)',
-    },
-    noir: {
-      wash: ['rgba(255,255,255,0.10)', 'rgba(120,120,120,0.16)', 'rgba(0,0,0,0.34)'],
-      frame: '#f5f5f5',
-      title: '#ffffff',
-      titleStroke: '#000000',
-      sub: '#e5e5e5',
-      badge: '#ffffff',
-      vignette: 'rgba(0,0,0,0.55)',
-    },
-  };
+// Panel rectangles are fractions of the canvas: [x, y, w, h].
+export const LAYOUTS = {
+  trio: {
+    label: 'Vice Trio',
+    blurb: 'Three upright panels, the middle one wider.',
+    rects: [
+      [0, 0, 0.3, 1],
+      [0.3, 0, 0.4, 1],
+      [0.7, 0, 0.3, 1],
+    ],
+  },
+  strip: {
+    label: 'Sunset Strip',
+    blurb: 'One wide hero band over two panels below.',
+    rects: [
+      [0, 0, 1, 0.56],
+      [0, 0.56, 0.5, 0.44],
+      [0.5, 0.56, 0.5, 0.44],
+    ],
+  },
+  hero: {
+    label: 'Hero + Duo',
+    blurb: 'A big lead panel with two stacked beside it.',
+    rects: [
+      [0, 0, 0.62, 1],
+      [0.62, 0, 0.38, 0.5],
+      [0.62, 0.5, 0.38, 0.5],
+    ],
+  },
+  quad: {
+    label: 'Four Corners',
+    blurb: 'A two-by-two grid of equal panels.',
+    rects: [
+      [0, 0, 0.5, 0.5],
+      [0.5, 0, 0.5, 0.5],
+      [0, 0.5, 0.5, 0.5],
+      [0.5, 0.5, 0.5, 0.5],
+    ],
+  },
+};
 
-  // Panel rectangles for a layout, as fractions of the cover. Every
-  // layout keeps an outer margin and a gutter, so the panels read as a
-  // poster grid instead of one flat photo.
-  function layoutRects(name, W, H) {
-    var m = Math.round(Math.min(W, H) * 0.028);
-    var g = Math.round(Math.min(W, H) * 0.016);
-    var x0 = m;
-    var y0 = m;
-    var x1 = W - m;
-    var y1 = H - m;
-    var w = x1 - x0;
-    var h = y1 - y0;
-    var third = (w - 2 * g) / 3;
-    var half = (w - g) / 2;
+export const LAYOUT_ORDER = ['trio', 'strip', 'hero', 'quad'];
 
-    if (name === 'strip') {
-      // Three tall columns side by side.
-      return [
-        { x: x0, y: y0, w: third, h: h },
-        { x: x0 + third + g, y: y0, w: third, h: h },
-        { x: x0 + 2 * (third + g), y: y0, w: third, h: h },
-      ];
-    }
-    if (name === 'hero') {
-      // One wide hero on top, two small panels below.
-      var topH = (h - g) * 0.62;
-      return [
-        { x: x0, y: y0, w: w, h: topH },
-        { x: x0, y: y0 + topH + g, w: half, h: h - topH - g },
-        { x: x0 + half + g, y: y0 + topH + g, w: half, h: h - topH - g },
-      ];
-    }
-    if (name === 'quad') {
-      // Four equal corners.
-      var halfH = (h - g) / 2;
-      return [
-        { x: x0, y: y0, w: half, h: halfH },
-        { x: x0 + half + g, y: y0, w: half, h: halfH },
-        { x: x0, y: y0 + halfH + g, w: half, h: halfH },
-        { x: x0 + half + g, y: y0 + halfH + g, w: half, h: halfH },
-      ];
-    }
-    // 'trio': tall hero panel on the left, two stacked panels right.
-    var heroW = (w - g) * 0.58;
-    var stackH = (h - g) / 2;
-    return [
-      { x: x0, y: y0, w: heroW, h: h },
-      { x: x0 + heroW + g, y: y0, w: w - heroW - g, h: stackH },
-      { x: x0 + heroW + g, y: y0 + stackH + g, w: w - heroW - g, h: stackH },
-    ];
+// A grade is a canvas filter applied while each photo is painted, plus a
+// translucent colour wash laid over the finished panels.
+export const GRADES = {
+  sunset: {
+    label: 'Vice Sunset',
+    photoFilter: 'saturate(1.32) contrast(1.06) sepia(0.16)',
+    wash(ctx, w, h) {
+      const g = ctx.createLinearGradient(0, 0, w * 0.25, h);
+      g.addColorStop(0, 'rgba(255, 122, 26, 0.10)');
+      g.addColorStop(0.55, 'rgba(255, 62, 120, 0.10)');
+      g.addColorStop(1, 'rgba(120, 16, 96, 0.24)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    },
+  },
+  neon: {
+    label: 'Neon Night',
+    photoFilter: 'saturate(1.65) contrast(1.12) brightness(1.02)',
+    wash(ctx, w, h) {
+      const g = ctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, 'rgba(0, 229, 255, 0.13)');
+      g.addColorStop(0.5, 'rgba(80, 40, 220, 0.10)');
+      g.addColorStop(1, 'rgba(255, 0, 140, 0.17)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    },
+  },
+  dusk: {
+    label: 'Palm Dusk',
+    photoFilter: 'saturate(1.14) contrast(1.08) brightness(0.93)',
+    wash(ctx, w, h) {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, 'rgba(24, 12, 64, 0.30)');
+      g.addColorStop(0.6, 'rgba(96, 32, 110, 0.12)');
+      g.addColorStop(1, 'rgba(255, 122, 40, 0.12)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    },
+  },
+  mono: {
+    label: 'Mono Noir',
+    photoFilter: 'grayscale(1) contrast(1.18) brightness(1.03)',
+    wash(ctx, w, h) {
+      const g = ctx.createLinearGradient(0, h, w, 0);
+      g.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0.10)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    },
+  },
+};
+
+export const GRADE_ORDER = ['sunset', 'neon', 'dusk', 'mono'];
+
+export const LETTERINGS = {
+  vice: { label: 'Vice Bold', hint: 'White block title, dark outline.' },
+  neon: { label: 'Neon Glow', hint: 'Glowing title on a dark band.' },
+  chrome: { label: 'Chrome Band', hint: 'Title on a metallic strip.' },
+};
+
+export const LETTERING_ORDER = ['vice', 'neon', 'chrome'];
+
+export const DISPLAY_FONT = '"Vice Display", "Arial Narrow", sans-serif';
+export const SANS_FONT = '"Vice Sans", Arial, sans-serif';
+
+// Rect of one panel in device pixels, for a canvas of w x h.
+export function panelRect(layoutId, index, w, h) {
+  const rects = LAYOUTS[layoutId].rects;
+  const r = rects[Math.min(index, rects.length - 1)];
+  return { x: r[0] * w, y: r[1] * h, w: r[2] * w, h: r[3] * h };
+}
+
+export function panelCount(layoutId) {
+  return LAYOUTS[layoutId].rects.length;
+}
+
+// Paint one photo into a rect, cover-fit, with a focal point (fx, fy in
+// 0..1) and a zoom factor. Parts of the photo outside the rect are clipped.
+function paintPhoto(ctx, img, rect, zoom, fx, fy) {
+  if (!img || !img.naturalWidth) return;
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  const scale = Math.max(rect.w / iw, rect.h / ih) * zoom;
+  const dw = iw * scale;
+  const dh = ih * scale;
+  // Focal point: (0.5, 0.5) centres the photo; moving it slides the crop.
+  const dx = rect.x + (rect.w - dw) / 2 - (fx - 0.5) * (dw - rect.w);
+  const dy = rect.y + (rect.h - dh) / 2 - (fy - 0.5) * (dh - rect.h);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(rect.x, rect.y, rect.w, rect.h);
+  ctx.clip();
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
+
+// Shrink a font until the text fits maxWidth; returns the fitted px size.
+function fitSize(ctx, text, weight, family, startPx, maxWidth) {
+  let px = startPx;
+  while (px > 12) {
+    ctx.font = `${weight} ${px}px ${family}`;
+    if (ctx.measureText(text).width <= maxWidth) break;
+    px -= 2;
   }
+  return px;
+}
 
-  // Deterministic speckle, so the grain looks identical on every export.
-  function mulberry32(seed) {
-    var a = seed >>> 0;
-    return function () {
-      a |= 0;
-      a = (a + 0x6d2b79f5) | 0;
-      var t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
+function vignette(ctx, w, h) {
+  const r = Math.hypot(w, h) / 2;
+  const g = ctx.createRadialGradient(w / 2, h / 2, r * 0.45, w / 2, h / 2, r);
+  g.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  g.addColorStop(1, 'rgba(0, 0, 0, 0.34)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+}
 
-  // Draw one photo into one panel: cover-fit first, then the panel's own
-  // zoom and pan. Pan is a -1..1 fraction of the spare room the zoom
-  // leaves on each axis.
-  function drawPhotoInto(ctx, img, rect, panel) {
-    var zoom = panel.zoom || 1;
-    var iw = img.naturalWidth || img.width;
-    var ih = img.naturalHeight || img.height;
-    if (!iw || !ih) return;
-    var scale = Math.max(rect.w / iw, rect.h / ih) * zoom;
-    var dw = iw * scale;
-    var dh = ih * scale;
-    var dx = rect.x + (rect.w - dw) / 2 + (panel.x || 0) * Math.max(0, (dw - rect.w) / 2);
-    var dy = rect.y + (rect.h - dh) / 2 + (panel.y || 0) * Math.max(0, (dh - rect.h) / 2);
+// --- Caption lettering -------------------------------------------------
+
+function spaced(ctx, text, cx, y) {
+  // Draws text with manual letter spacing (canvas letterSpacing is not
+  // honoured everywhere); returns the total width drawn.
+  const widths = [...text].map((ch) => ctx.measureText(ch).width);
+  const gap = ctx.letterGap || 0;
+  const total = widths.reduce((a, b) => a + b, 0) + gap * (text.length - 1);
+  let x = cx - total / 2;
+  [...text].forEach((ch, i) => {
+    ctx.fillText(ch, x, y);
+    x += widths[i] + gap;
+  });
+  return total;
+}
+
+function paintViceTitle(ctx, title, subtitle, w, h) {
+  const pad = w * 0.045;
+  const maxW = w - pad * 2;
+  const baseY = h * 0.86;
+  const titlePx = fitSize(ctx, title, 900, DISPLAY_FONT, h * 0.115, maxW);
+  ctx.save();
+  ctx.translate(w / 2, baseY);
+  ctx.rotate(-0.022);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 ${titlePx}px ${DISPLAY_FONT}`;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#160409';
+  ctx.lineWidth = Math.max(3, titlePx * 0.09);
+  ctx.strokeText(title, 0, 0);
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+  ctx.shadowBlur = titlePx * 0.16;
+  ctx.shadowOffsetY = titlePx * 0.04;
+  ctx.fillText(title, 0, 0);
+  ctx.restore();
+  if (subtitle) {
+    const subPx = Math.max(13, h * 0.028);
     ctx.save();
-    ctx.beginPath();
-    ctx.rect(rect.x, rect.y, rect.w, rect.h);
-    ctx.clip();
-    ctx.drawImage(img, dx, dy, dw, dh);
-    ctx.restore();
-  }
-
-  // A diagonal sunset wash plus a soft vignette, laid over one panel.
-  function gradePanel(ctx, rect, grade) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(rect.x, rect.y, rect.w, rect.h);
-    ctx.clip();
-    var wash = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
-    wash.addColorStop(0, grade.wash[0]);
-    wash.addColorStop(0.55, grade.wash[1]);
-    wash.addColorStop(1, grade.wash[2]);
-    ctx.fillStyle = wash;
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    var vig = ctx.createRadialGradient(
-      rect.x + rect.w / 2, rect.y + rect.h / 2, Math.min(rect.w, rect.h) * 0.35,
-      rect.x + rect.w / 2, rect.y + rect.h / 2, Math.max(rect.w, rect.h) * 0.75,
-    );
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, grade.vignette);
-    ctx.fillStyle = vig;
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.restore();
-  }
-
-  // The caption: a big bold title with a heavy outline, a letterspaced
-  // subtitle, and a small original star badge. The lettering style
-  // changes only the title's treatment; the words stay the user's.
-  function drawCaption(ctx, W, H, state, grade) {
-    var title = (state.title || '').trim().toUpperCase();
-    var sub = (state.subtitle || '').trim().toUpperCase();
-    var scale = Math.min(W, H) / 1080;
-    var bottom = state.captionPos !== 'top';
-    var bandH = Math.round(H * 0.16 * (state.titleScale || 1));
-    var bandY = bottom ? H - bandH - Math.round(H * 0.035) : Math.round(H * 0.035);
-    var cx = W / 2;
-
-    if (state.captionStyle === 'chrome') {
-      ctx.save();
-      ctx.fillStyle = 'rgba(10,4,20,0.72)';
-      ctx.fillRect(0, bandY, W, bandH);
-      ctx.fillStyle = grade.badge;
-      ctx.fillRect(0, bandY, W, Math.max(3, Math.round(4 * scale)));
-      ctx.fillRect(0, bandY + bandH - Math.max(3, Math.round(4 * scale)), W, Math.max(3, Math.round(4 * scale)));
-      ctx.restore();
-    }
-
-    if (title) {
-      var size = Math.round(Math.min(W * 0.105, bandH * 0.62) * (state.titleScale || 1));
-      ctx.save();
-      ctx.font = '900 ' + size + 'px "Vice Display", "Vice Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      try { ctx.letterSpacing = Math.round(size * 0.04) + 'px'; } catch (e) { /* older canvas: no tracking */ }
-      var ty = bandY + bandH / 2 - (sub ? size * 0.12 : 0);
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = grade.titleStroke;
-      ctx.lineWidth = Math.max(3, Math.round(size * 0.14));
-      if (state.captionStyle === 'neon') {
-        ctx.shadowColor = grade.badge;
-        ctx.shadowBlur = Math.round(size * 0.30);
-      } else {
-        ctx.shadowColor = 'rgba(0,0,0,0.55)';
-        ctx.shadowBlur = Math.round(size * 0.16);
-        ctx.shadowOffsetY = Math.round(size * 0.05);
-      }
-      ctx.strokeText(title, cx, ty);
-      ctx.fillStyle = grade.title;
-      ctx.fillText(title, cx, ty);
-      ctx.restore();
-    }
-
-    if (sub) {
-      var subSize = Math.round(Math.min(W * 0.026, 30 * scale + 8));
-      ctx.save();
-      ctx.font = '700 ' + subSize + 'px "Vice Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      try { ctx.letterSpacing = Math.round(subSize * 0.32) + 'px'; } catch (e) { /* older canvas */ }
-      var sy = bandY + bandH - Math.round(subSize * 1.1);
-      if (!title) sy = bandY + bandH / 2;
-      ctx.shadowColor = 'rgba(0,0,0,0.6)';
-      ctx.shadowBlur = Math.round(subSize * 0.3);
-      ctx.fillStyle = grade.sub;
-      ctx.fillText(sub, cx, sy);
-      ctx.restore();
-    }
-
-    // Small original badge, in the corner opposite the caption.
-    // The pill is sized from the measured text so the label never
-    // overflows its rounded background at any export size.
-    var b = Math.round(34 * scale + 10);
-    var bx = Math.round(W * 0.035);
-    var by = bottom ? Math.round(H * 0.035) : H - b - Math.round(H * 0.035);
-    ctx.save();
-    ctx.font = '700 ' + Math.round(b * 0.52) + 'px "Vice Sans", sans-serif';
+    ctx.font = `700 ${subPx}px ${SANS_FONT}`;
+    ctx.letterGap = subPx * 0.42;
     ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    var label = '\u2605  VC STUDIO';
-    var pad = Math.round(b * 0.32);
-    var pillW = Math.ceil(ctx.measureText(label).width) + pad * 2;
-    ctx.fillStyle = 'rgba(10,4,20,0.66)';
-    ctx.beginPath();
-    ctx.roundRect(bx, by, pillW, b, b / 2);
-    ctx.fill();
-    ctx.fillStyle = grade.badge;
-    ctx.fillText(label, bx + pad, by + b / 2 + 1);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#ffe9a8';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = subPx * 0.35;
+    spaced(ctx, subtitle.toUpperCase(), w / 2, baseY + subPx * 1.7);
     ctx.restore();
   }
+}
 
-  // A light print grain over the whole cover.
-  function grain(ctx, W, H) {
-    var rnd = mulberry32(20261119);
-    ctx.save();
-    ctx.globalAlpha = 0.05;
-    ctx.fillStyle = '#ffffff';
-    var n = Math.round((W * H) / 9000);
-    for (var i = 0; i < n; i++) {
-      var s = rnd() < 0.5 ? 1 : 2;
-      ctx.fillRect(rnd() * W, rnd() * H, s, s);
+function paintNeonTitle(ctx, title, subtitle, w, h) {
+  const bandH = h * 0.2;
+  const bandY = h - bandH;
+  ctx.save();
+  ctx.fillStyle = 'rgba(8, 4, 24, 0.72)';
+  ctx.fillRect(0, bandY, w, bandH);
+  ctx.fillStyle = 'rgba(0, 229, 255, 0.85)';
+  ctx.fillRect(0, bandY, w, Math.max(2, h * 0.004));
+  ctx.fillStyle = 'rgba(255, 0, 140, 0.85)';
+  ctx.fillRect(0, h - Math.max(2, h * 0.004), w, Math.max(2, h * 0.004));
+  const pad = w * 0.05;
+  const titlePx = fitSize(ctx, title, 900, DISPLAY_FONT, h * 0.105, w - pad * 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${titlePx}px ${DISPLAY_FONT}`;
+  ctx.shadowColor = '#00e5ff';
+  ctx.shadowBlur = titlePx * 0.42;
+  ctx.fillStyle = '#eafcff';
+  ctx.fillText(title, w / 2, bandY + bandH * 0.38);
+  ctx.shadowColor = '#ff008c';
+  ctx.shadowBlur = titlePx * 0.22;
+  ctx.fillStyle = '#ffd7ef';
+  ctx.fillText(title, w / 2, bandY + bandH * 0.38);
+  ctx.shadowBlur = 0;
+  if (subtitle) {
+    const subPx = Math.max(13, h * 0.026);
+    ctx.font = `700 ${subPx}px ${SANS_FONT}`;
+    ctx.letterGap = subPx * 0.5;
+    ctx.fillStyle = '#9ff3ff';
+    spaced(ctx, subtitle.toUpperCase(), w / 2, bandY + bandH * 0.78);
+  }
+  ctx.restore();
+}
+
+function paintChromeTitle(ctx, title, subtitle, w, h) {
+  const bandH = h * 0.17;
+  const bandY = h - bandH;
+  const metal = ctx.createLinearGradient(0, bandY, 0, h);
+  metal.addColorStop(0, '#f5f8fc');
+  metal.addColorStop(0.35, '#aeb9c6');
+  metal.addColorStop(0.55, '#e8edf3');
+  metal.addColorStop(0.8, '#7c8896');
+  metal.addColorStop(1, '#dfe5ec');
+  ctx.save();
+  ctx.fillStyle = metal;
+  ctx.fillRect(0, bandY, w, bandH);
+  ctx.fillStyle = 'rgba(16, 19, 26, 0.9)';
+  ctx.fillRect(0, bandY, w, Math.max(2, h * 0.005));
+  const pad = w * 0.05;
+  const titlePx = fitSize(ctx, title, 900, DISPLAY_FONT, h * 0.1, w - pad * 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${titlePx}px ${DISPLAY_FONT}`;
+  ctx.fillStyle = '#12151d';
+  ctx.fillText(title, w / 2, bandY + bandH * 0.36);
+  if (subtitle) {
+    const subPx = Math.max(12, h * 0.024);
+    ctx.font = `700 ${subPx}px ${SANS_FONT}`;
+    ctx.letterGap = subPx * 0.46;
+    ctx.fillStyle = '#3c4450';
+    spaced(ctx, subtitle.toUpperCase(), w / 2, bandY + bandH * 0.76);
+  }
+  ctx.restore();
+}
+
+const TITLE_PAINTERS = { vice: paintViceTitle, neon: paintNeonTitle, chrome: paintChromeTitle };
+
+// --- Main entry point --------------------------------------------------
+
+// state: { layout, grade, lettering, title, subtitle, panels }
+// panels[i]: { img, zoom, x, y } — img may be null (empty panel).
+export function drawCover(ctx, state, w, h) {
+  const grade = GRADES[state.grade] || GRADES.sunset;
+  const gap = (GUTTER * w) / 1080;
+  ctx.save();
+  ctx.clearRect(0, 0, w, h);
+  // Paper-white gutters show between the panels.
+  ctx.fillStyle = '#f4efe8';
+  ctx.fillRect(0, 0, w, h);
+  const count = panelCount(state.layout);
+  for (let i = 0; i < count; i++) {
+    const full = panelRect(state.layout, i, w, h);
+    const rect = {
+      x: full.x + gap / 2,
+      y: full.y + gap / 2,
+      w: full.w - gap,
+      h: full.h - gap,
+    };
+    const p = state.panels[i];
+    if (p && p.img) {
+      ctx.filter = grade.photoFilter;
+      paintPhoto(ctx, p.img, rect, p.zoom || 1, p.x ?? 0.5, p.y ?? 0.5);
+      ctx.filter = 'none';
+    } else {
+      // Empty panel: a dark placeholder with a thin frame.
+      ctx.fillStyle = '#241a2e';
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = Math.max(1, w * 0.0015);
+      ctx.strokeRect(rect.x + 8, rect.y + 8, rect.w - 16, rect.h - 16);
     }
-    ctx.restore();
   }
-
-  // Render the whole cover. `state.photos` holds the loaded Image
-  // elements (or null slots); `state.panels[i]` picks the photo, zoom
-  // and pan for panel i.
-  function drawCover(ctx, W, H, state) {
-    var grade = GRADES[state.grade] || GRADES.sunset;
-    ctx.save();
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#160a24';
-    ctx.fillRect(0, 0, W, H);
-
-    var rects = layoutRects(state.layout || 'trio', W, H);
-    for (var i = 0; i < rects.length; i++) {
-      var panel = state.panels[i] || { photo: 0, zoom: 1.2, x: 0, y: 0 };
-      var img = state.photos[panel.photo];
-      if (img) drawPhotoInto(ctx, img, rects[i], panel);
-      gradePanel(ctx, rects[i], grade);
-      ctx.save();
-      ctx.strokeStyle = grade.frame;
-      ctx.globalAlpha = 0.9;
-      ctx.lineWidth = Math.max(2, Math.round(Math.min(W, H) * 0.004));
-      ctx.strokeRect(rects[i].x, rects[i].y, rects[i].w, rects[i].h);
-      ctx.restore();
-    }
-
-    drawCaption(ctx, W, H, state, grade);
-    grain(ctx, W, H);
-    ctx.restore();
-  }
-
-  // A fresh canvas with the cover rendered at export size.
-  function renderExport(state, size) {
-    var canvas = document.createElement('canvas');
-    canvas.width = size.w;
-    canvas.height = size.h;
-    drawCover(canvas.getContext('2d'), size.w, size.h, state);
-    return canvas;
-  }
-
-  window.ViceCover = {
-    GRADES: GRADES,
-    layoutRects: layoutRects,
-    drawCover: drawCover,
-    renderExport: renderExport,
-    panelCount: function (layout) { return layoutRects(layout || 'trio', 100, 100).length; },
-  };
-})();
+  grade.wash(ctx, w, h);
+  vignette(ctx, w, h);
+  const painter = TITLE_PAINTERS[state.lettering] || paintViceTitle;
+  painter(ctx, (state.title || '').toUpperCase(), state.subtitle || '', w, h);
+  ctx.restore();
+}

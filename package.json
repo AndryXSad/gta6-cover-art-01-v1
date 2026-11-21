@@ -1,5 +1,1 @@
-{
-  "name": "vice-cover-studio",
-  "private": true,
-  "type": "module"
-}
+{"description":"Offline multi-panel GTA-style poster cover maker — Vice Cover Studio, a make.fun gta6-cover-art-01 entry.","license":"MIT","name":"vice-cover-studio","private":true,"scripts":{"dossier":"node main.ts","start":"node serve.ts","verify":"mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts"},"type":"module","version":"1.0.0"}

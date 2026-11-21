@@ -1,61 +1,74 @@
-# Vice Cover Studio — GTA-style poster cover maker
+# Vice Cover Studio
 
-[![make.fun bounty](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![make.fun — gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
 [![make.fun rank](https://make.fun/badge/gta6-cover-art-01/AndryXSad/gta6-cover-art-01-v1/rank.svg)](https://make.fun/bounty/gta6-cover-art-01)
 [![make.fun reward](https://make.fun/badge/gta6-cover-art-01/AndryXSad/gta6-cover-art-01-v1/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
 
-An offline web app that turns your own photos and a caption into a
-multi-panel poster cover in the style of GTA 6's posters — bold caption
-lettering, a Vice City sunset or neon colour grade — exported as a PNG to
-share. Built for the [make.fun GTA 6 Cover Art bounty](https://make.fun/bounty/gta6-cover-art-01).
+**Vice Cover Studio** turns your photos into a multi-panel GTA-style poster
+cover, right in the browser. Pick a layout, a colour grade and a lettering
+style, crop and position each photo, write your caption, and export a PNG
+ready to post. Everything runs offline — your photos never leave your
+machine.
 
-## What it does
+Built for the [make.fun gta6-cover-art-01 bounty](https://make.fun/bounty/gta6-cover-art-01)
+($250, top 50).
 
-- **Any photo:** load up to three photos from your machine (or use the
-  bundled samples). Every panel can show any photo.
-- **Crop and position:** pick a panel, drag it on the preview to move the
-  photo, scroll to zoom, or use the sliders. One photo can fill several
-  panels, or each panel can show a different one.
-- **Four poster layouts:** Vice Trio, Sunset Strip, Hero + Duo, Four Corners.
-- **Four colour grades:** Vice Sunset, Neon Night, Palm Dusk, Mono Noir.
-- **Caption:** your own title and subtitle, three lettering styles
-  (solid + outline, neon glow, chrome band), top or bottom placement,
-  adjustable size.
-- **Fast export:** one click exports a PNG in 1080×1080, 1080×1350 or
-  1920×1080.
+## Features
 
-## Run it
+- **4 layouts** — Vice Trio (three upright panels), Sunset Strip (hero band
+  over two panels), Hero + Duo (big lead panel with two stacked), Four
+  Corners (2×2 grid).
+- **4 colour grades** — Vice Sunset, Neon Night, Palm Dusk, Mono Noir.
+  Each grade re-tones the photos and lays a matching colour wash over the
+  poster.
+- **3 lettering styles** — Vice Bold (white block title, dark outline),
+  Neon Glow (glowing title on a dark band), Chrome Band (title on a
+  metallic strip).
+- **Crop & position per panel** — drag a photo on the canvas to pan it,
+  scroll to zoom, or use the zoom / left-right / up-down sliders.
+- **Your photos or the samples** — upload any image for any panel, fill
+  all panels with one photo, or use the two bundled AI-made sample photos.
+- **Exact export sizes** — 1080×1080, 1080×1350 and 1920×1080 PNG, at the
+  pixel. Shortcut: Ctrl/Cmd + Enter.
+- **Fully offline** — static files under `app/`, no network requests, no
+  build step.
 
-The app is static files under `app/` — no build step, no network request.
-Serve it with any static server:
+## Try it
 
 ```sh
 node serve.ts
 # open http://localhost:8080
 ```
 
-Everything runs in your browser. Photos are read on your machine and are
-never uploaded. Tip: Ctrl/Cmd+Enter exports the cover at the chosen size
-without reaching for the button.
+Or open `app/index.html` directly in desktop Chrome.
 
-## Originality
+## How it works
 
-All artwork is made by this app at render time. It uses no Rockstar Games
-logo, wordmark, official artwork, character or font. The type is
-Liberation Sans and Noto Sans Display, shipped under `app/fonts/` under
-the SIL Open Font License 1.1 (`app/fonts/OFL.txt`). The sample photos
-under `app/samples/` were made with an image model and are free to use.
+- `app/index.html` — the editor shell: controls on the left, live canvas
+  preview on the right.
+- `app/style.css` — the editor's dark neon theme.
+- `app/src/cover.js` — the pure canvas renderer: panel geometry, photo
+  cover-fit with focal point + zoom, colour grades, caption lettering,
+  vignette.
+- `app/src/main.js` — state, controls, drag/wheel gestures, PNG export
+  (`window.__viceExport(size)` renders any size on demand).
+- `app/fonts/` — Noto Sans + Noto Sans Display Condensed, both under the
+  SIL Open Font License 1.1 (see `app/fonts/FONTS.txt`).
+- `app/samples/` — two AI-made sample photos from the bounty kit, free to
+  use.
+- `main.ts` — the submission entrypoint: copies `app/` and `screenshots/`
+  to the output directory and writes `dossier.json` with `buildDossier`
+  from `vendor/makefun-app.ts`.
+- `serve.ts` — the local static server above.
 
-## Entry
-
-`main.ts` (Node 22, standard library only) copies `app/` and
-`screenshots/` to the output directory and writes `dossier.json` with the
-vendored make.fun library:
+Verify the dossier locally:
 
 ```sh
 mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
-## License
+## Notes
 
-MIT — see [LICENSE](LICENSE).
+- Original work, not affiliated with Rockstar Games. No Rockstar logos,
+  wordmarks, official artwork, characters or fonts are used anywhere.
+- License: MIT (see `LICENSE`). Fonts: SIL Open Font License 1.1.

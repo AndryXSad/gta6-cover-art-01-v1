@@ -1,12 +1,24 @@
-Fonts shipped with Vice Cover Studio (all under this directory):
+Fonts shipped with Vice Cover Studio
+====================================
 
-- LiberationSans-Regular.ttf, LiberationSans-Bold.ttf
-  Liberation Sans, copyright (c) 2012 Red Hat, Inc.
-  Licensed under the SIL Open Font License, Version 1.1 (see OFL.txt).
+All four files are released under the SIL Open Font License, Version 1.1
+(see OFL.txt in this directory). None of them is a Rockstar Games font.
 
-- NotoSansDisplay-Bold.ttf, NotoSansDisplay-Black.ttf
-  Noto Sans Display, copyright (c) Google Inc.
-  Licensed under the SIL Open Font License, Version 1.1 (see OFL.txt).
+- NotoSans-Regular.ttf
+  Noto Sans, Regular weight. Used for the editor interface text and for
+  caption subtitles on the cover.
 
-The full text of the SIL Open Font License 1.1 is in OFL.txt.
-No Rockstar Games font is used anywhere in this app.
+- NotoSans-Bold.ttf
+  Noto Sans, Bold weight. Used for the editor interface and for caption
+  subtitles on the cover.
+
+- NotoSansDisplay-CondensedBlack.ttf
+  Noto Sans Display, Condensed Black weight. Used for the big condensed
+  cover title in all three lettering styles ("Vice Display" 900).
+
+- NotoSansDisplay-CondensedBold.ttf
+  Noto Sans Display, Condensed Bold weight. Used for the cover title at
+  weight 700 where the design calls for it ("Vice Display" 700).
+
+Copyright: Noto is a trademark of Google LLC. The Noto fonts are
+copyright Google LLC and licensed under the SIL Open Font License 1.1.

@@ -1,63 +1,48 @@
-// Vice Cover Studio — the entry program (Node 22, standard library only).
+// Vice Cover Studio — submission entrypoint.
+// Copies app/ and screenshots/ from this repository into the output
+// directory and writes /output/dossier.json with buildDossier from the
+// vendored makefun-app.ts. Outside the grader, MAKEFUN_OUTPUT_DIR stands
+// in for /output (the kit's documented convention).
 //
-// It hands the app in: it copies this repository's app/ and screenshots/
-// into the grader's output directory and writes /output/dossier.json with
-// the vendored make.fun dossier library, so the scorer can check the entry
-// against the same bytes the judge reads.
-//
-// Outside the grader, MAKEFUN_OUTPUT_DIR stands in for /output:
-//   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-//
-// The output must be byte-identical across the grader's two runs, so this
-// program writes nothing but the copied trees and the dossier, and it
-// refuses to run when the input it was given cannot pass the gate's caps.
+// Usage:  mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// The run must be byte-identical across runs and must not write into the
+// repository, so a read-only checkout still works.
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
 
-// The repository root is the directory this file lives in.
-const repoRoot = fileURLToPath(new URL('.', import.meta.url));
-const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
+const OUT_DIR = resolve(process.env.MAKEFUN_OUTPUT_DIR ?? '/output');
 
-// The gate's caps, from the competition's gate.json: the dossier text cap
-// shapes the bytes; the rest only refuse an entry the scorer would refuse.
-const DOSSIER_CAPS = {
+// Caps from the competition rules: the dossier text holds at most
+// 160 KiB of source, the entry hands in 3–4 screenshots, the site
+// publishes at most 993 files / 48 MiB with paths under 240 bytes.
+const CAPS = {
   text_max_bytes: 163840,
-  screenshots: { max: 4, max_bytes: 262144 },
+  screenshots: { max: 4, max_bytes: 4 * 1024 * 1024 },
   app_max_files: 993,
-  app_max_bytes: 50331648,
-  app_path_max_bytes: 1000,
+  app_max_bytes: 48 * 1024 * 1024,
+  app_path_max_bytes: 240,
 };
 
-function fail(message: string): never {
-  throw new Error(`main.ts: ${message}`);
-}
-
-const appDir = join(repoRoot, 'app');
-const shotsDir = join(repoRoot, 'screenshots');
-
-if (!existsSync(join(appDir, 'index.html'))) fail('app/index.html is missing');
-if (!statSync(appDir).isDirectory()) fail('app/ is not a directory');
-
-const shots = existsSync(shotsDir)
-  ? readdirSync(shotsDir).filter((name) => !name.startsWith('.'))
-  : [];
-if (shots.length < 3 || shots.length > 4) {
-  fail(`screenshots/ holds ${shots.length} images, need 3 or 4`);
-}
-for (const shot of shots) {
-  if (!statSync(join(shotsDir, shot)).isFile()) {
-    fail(`screenshots/${shot} is not a regular file`);
+function copyTree(name: string): void {
+  const src = join(REPO_ROOT, name);
+  if (!existsSync(src)) {
+    throw new Error(`main.ts: ${name}/ is missing from the repository`);
   }
+  cpSync(src, join(OUT_DIR, name), { recursive: true });
 }
 
-mkdirSync(outputDir, { recursive: true });
-cpSync(appDir, join(outputDir, 'app'), { recursive: true });
-cpSync(shotsDir, join(outputDir, 'screenshots'), { recursive: true });
+function main(): void {
+  rmSync(OUT_DIR, { recursive: true, force: true });
+  mkdirSync(OUT_DIR, { recursive: true });
+  copyTree('app');
+  copyTree('screenshots');
+  const dossier = buildDossier(OUT_DIR, CAPS);
+  writeFileSync(join(OUT_DIR, 'dossier.json'), dossier);
+  console.log(`main.ts: wrote ${join(OUT_DIR, 'dossier.json')} (${dossier.length} bytes)`);
+}
 
-const dossier = buildDossier(outputDir, DOSSIER_CAPS);
-writeFileSync(join(outputDir, 'dossier.json'), dossier);
-
-console.log(`vice-cover-studio: wrote ${shots.length} screenshots and dossier.json (${dossier.length} bytes) to ${outputDir}`);
+main();
