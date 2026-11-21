@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Vice Cover Studio — an offline app that turns your photos into GTA-style multi-panel poster cover art and exports PNGs to share.">
+<title>Vice Cover Studio — GTA-style cover maker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">
+    <span class="brand-mark">VC</span>
+    <div>
+      <h1>Vice Cover Studio</h1>
+      <p class="tagline">Turn your photos into a Vice City style poster cover. Offline, free, no upload.</p>
+    </div>
+  </div>
+  <div class="masthead-side">
+    <span class="pill">4 layouts</span>
+    <span class="pill">4 grades</span>
+    <span class="pill">3 letterings</span>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="panel controls" aria-label="Cover controls">
+    <h2>1 · Photos</h2>
+    <label class="file-btn" for="photoFiles">Add your photos
+      <input id="photoFiles" type="file" accept="image/*" multiple hidden>
+    </label>
+    <button id="loadSamples" type="button" class="btn ghost">Load the two sample photos</button>
+    <p class="hint">Photos stay on your machine. Pick one photo to fill every panel, or a different photo per panel.</p>
+
+    <h2>2 · Layout</h2>
+    <div class="chip-row" id="layoutRow">
+      <button type="button" class="chip on" data-layout="trio">Vice Trio</button>
+      <button type="button" class="chip" data-layout="strip">Sunset Strip</button>
+      <button type="button" class="chip" data-layout="hero">Hero + Duo</button>
+      <button type="button" class="chip" data-layout="quad">Four Corners</button>
+    </div>
+
+    <h2>3 · Colour grade</h2>
+    <div class="chip-row" id="gradeRow">
+      <button type="button" class="chip on" data-grade="sunset">Vice Sunset</button>
+      <button type="button" class="chip" data-grade="neon">Neon Night</button>
+      <button type="button" class="chip" data-grade="dusk">Palm Dusk</button>
+      <button type="button" class="chip" data-grade="mono">Mono Noir</button>
+    </div>
+
+    <h2>4 · Caption</h2>
+    <label class="field">Title
+      <input id="titleInput" type="text" value="VICE CITY" maxlength="24" autocomplete="off">
+    </label>
+    <label class="field">Sub-caption
+      <input id="subInput" type="text" value="WELCOME BACK TO THE SUNSHINE STATE" maxlength="48" autocomplete="off">
+    </label>
+    <label class="field">Lettering style
+      <select id="captionStyle">
+        <option value="vice" selected>Vice — tall condensed, pink bar</option>
+        <option value="neon">Neon — glowing outline</option>
+        <option value="chrome">Chrome — silver band</option>
+      </select>
+    </label>
+
+    <h2>5 · Frame the photo</h2>
+    <div class="chip-row" id="panelRow">
+      <button type="button" class="chip on" data-panel="0">Panel 1</button>
+      <button type="button" class="chip" data-panel="1">Panel 2</button>
+      <button type="button" class="chip" data-panel="2">Panel 3</button>
+      <button type="button" class="chip" data-panel="3">Panel 4</button>
+    </div>
+    <label class="field">Zoom
+      <input id="zoomRange" type="range" min="1" max="2.6" step="0.01" value="1.15">
+    </label>
+    <div class="slider-pair">
+      <label class="field">Left–right
+        <input id="panX" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <label class="field">Up–down
+        <input id="panY" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+    </div>
+    <p class="hint">Tip: drag the preview to move the photo, scroll over it to zoom.</p>
+
+    <h2>6 · Export</h2>
+    <label class="field">Post size
+      <select id="exportSize">
+        <option value="1080x1080" selected>Square — 1080 × 1080</option>
+        <option value="1080x1350">Portrait — 1080 × 1350</option>
+        <option value="1920x1080">Wide — 1920 × 1080</option>
+      </select>
+    </label>
+    <button id="exportBtn" type="button" class="btn primary">Download PNG cover</button>
+    <p class="hint">Shortcut: Ctrl/⌘ + Enter exports too.</p>
+  </section>
+
+  <section class="panel stage-wrap" aria-label="Live preview">
+    <div class="stage-head">
+      <h2>Live preview</h2>
+      <span id="sizeLabel" class="pill">1080 × 1080</span>
+    </div>
+    <div class="stage-box">
+      <canvas id="stage" width="640" height="640"></canvas>
+    </div>
+    <p class="hint">What you see is what the PNG gets — same panels, same grade, same lettering.</p>
+    <ul class="feature-list">
+      <li><strong>Multi-panel poster:</strong> three or four photo panels with thin neon gutters.</li>
+      <li><strong>Sunset &amp; neon grades:</strong> warm Vice glow, electric night, palm dusk or noir.</li>
+      <li><strong>Bold caption:</strong> tall condensed lettering with outline, glow or chrome band.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Vice Cover Studio — an original fan-made cover tool. No Rockstar Games logo, artwork or font is used. Fonts: Liberation Sans and Noto Sans Display, SIL Open Font License 1.1.</p>
+</footer>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

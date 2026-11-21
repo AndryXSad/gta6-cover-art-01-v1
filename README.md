@@ -1,37 +1,19 @@
 # Vice Cover Studio
 
-[![make.fun — gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
-[![make.fun rank](https://make.fun/badge/gta6-cover-art-01/AndryXSad/gta6-cover-art-01-v1/rank.svg)](https://make.fun/bounty/gta6-cover-art-01)
-[![make.fun reward](https://make.fun/badge/gta6-cover-art-01/AndryXSad/gta6-cover-art-01-v1/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![make.fun bounty](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![rank](https://make.fun/badge/gta6-cover-art-01/AndryXSad/gta6-cover-art-01-v1/rank.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![reward](https://make.fun/badge/gta6-cover-art-01/AndryXSad/gta6-cover-art-01-v1/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
 
-**Vice Cover Studio** turns your photos into a multi-panel GTA-style poster
-cover, right in the browser. Pick a layout, a colour grade and a lettering
-style, crop and position each photo, write your caption, and export a PNG
-ready to post. Everything runs offline — your photos never leave your
-machine.
+An offline web app that turns your photos into GTA-style poster cover art — the multi-panel Vice City look with bold caption lettering and a sunset or neon colour grade — and exports it as a PNG to share. Built for the [make.fun bounty](https://make.fun/bounty/gta6-cover-art-01).
 
-Built for the [make.fun gta6-cover-art-01 bounty](https://make.fun/bounty/gta6-cover-art-01)
-($250, top 50).
+## What it does
 
-## Features
-
-- **4 layouts** — Vice Trio (three upright panels), Sunset Strip (hero band
-  over two panels), Hero + Duo (big lead panel with two stacked), Four
-  Corners (2×2 grid).
-- **4 colour grades** — Vice Sunset, Neon Night, Palm Dusk, Mono Noir.
-  Each grade re-tones the photos and lays a matching colour wash over the
-  poster.
-- **3 lettering styles** — Vice Bold (white block title, dark outline),
-  Neon Glow (glowing title on a dark band), Chrome Band (title on a
-  metallic strip).
-- **Crop & position per panel** — drag a photo on the canvas to pan it,
-  scroll to zoom, or use the zoom / left-right / up-down sliders.
-- **Your photos or the samples** — upload any image for any panel, fill
-  all panels with one photo, or use the two bundled AI-made sample photos.
-- **Exact export sizes** — 1080×1080, 1080×1350 and 1920×1080 PNG, at the
-  pixel. Shortcut: Ctrl/Cmd + Enter.
-- **Fully offline** — static files under `app/`, no network requests, no
-  build step.
+- **Any photo:** add your own photos from your machine (or load the two bundled samples). One photo can fill every panel, or each panel can take a different photo. Photos are never uploaded — everything runs in your browser.
+- **Four layouts:** Vice Trio (three upright columns), Sunset Strip (wide banner over two halves), Hero + Duo (one big feature panel with two stacked beside it), Four Corners (2×2 grid).
+- **Four colour grades:** Vice Sunset, Neon Night, Palm Dusk and Mono Noir — warm glow, electric night, purple dusk or high-contrast black and white.
+- **Three letterings:** Vice (tall condensed title with a pink bar), Neon (glowing outline) and Chrome (silver band with rules).
+- **Crop and position per panel:** drag the preview to pan, scroll to zoom, or use the zoom and pan sliders.
+- **One-step export:** PNG in the common post sizes — 1080 × 1080, 1080 × 1350 and 1920 × 1080. Ctrl/⌘ + Enter exports too.
 
 ## Try it
 
@@ -40,35 +22,27 @@ node serve.ts
 # open http://localhost:8080
 ```
 
-Or open `app/index.html` directly in desktop Chrome.
+Then pick a layout, a grade and a caption, frame each photo, and hit Download PNG cover.
 
-## How it works
+No build step, no network requests: `app/` is plain static files, and every script, font and sample photo it loads is a file under `app/`.
 
-- `app/index.html` — the editor shell: controls on the left, live canvas
-  preview on the right.
-- `app/style.css` — the editor's dark neon theme.
-- `app/src/cover.js` — the pure canvas renderer: panel geometry, photo
-  cover-fit with focal point + zoom, colour grades, caption lettering,
-  vignette.
-- `app/src/main.js` — state, controls, drag/wheel gestures, PNG export
-  (`window.__viceExport(size)` renders any size on demand).
-- `app/fonts/` — Noto Sans + Noto Sans Display Condensed, both under the
-  SIL Open Font License 1.1 (see `app/fonts/FONTS.txt`).
-- `app/samples/` — two AI-made sample photos from the bounty kit, free to
-  use.
-- `main.ts` — the submission entrypoint: copies `app/` and `screenshots/`
-  to the output directory and writes `dossier.json` with `buildDossier`
-  from `vendor/makefun-app.ts`.
-- `serve.ts` — the local static server above.
+## How the cover is made
 
-Verify the dossier locally:
+`app/src/cover.js` paints the poster on canvas: each photo is cover-fit into its panel with its own zoom and focal point, thin pale gutters separate the panels, a grade wash (sunset glow, neon magenta/cyan, dusk purple/amber or noir) is laid over the whole poster with a vignette, and the caption block — big condensed title plus sub-caption — sits on a bottom scrim so it stays readable over any photo. `app/src/main.js` owns the editor state and the DOM wiring.
+
+## Fonts and photos
+
+- Fonts: Liberation Sans (Regular, Bold) and Noto Sans Display Condensed (SemiBold, ExtraBold), all under the SIL Open Font License 1.1 — see `app/fonts/FONTS.txt` and `app/fonts/OFL.txt`. No Rockstar Games logo, artwork or font is used anywhere.
+- Sample photos: the kit's two AI-made photos (`app/samples/`), free to use.
+
+## Entry program
+
+`main.ts` (Node 22, standard library only) copies `app/` and `screenshots/` to `/output` and writes `/output/dossier.json` with the vendored make.fun library:
 
 ```sh
 mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
-## Notes
+## License
 
-- Original work, not affiliated with Rockstar Games. No Rockstar logos,
-  wordmarks, official artwork, characters or fonts are used anywhere.
-- License: MIT (see `LICENSE`). Fonts: SIL Open Font License 1.1.
+MIT — see [LICENSE](LICENSE).

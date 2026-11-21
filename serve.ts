@@ -1,53 +1,68 @@
-// Vice Cover Studio — tiny static server for local try-outs.
-// Serves app/ on http://localhost:8080 (open that URL after starting it).
-// No build step, no dependencies, no network calls: it only reads files
-// under app/ and answers with the right content type.
-//
-// Usage: node serve.ts
+// Vice Cover Studio — tiny static server for trying the app locally.
+// `node serve.ts` serves app/ on http://localhost:8080 (or --port <n>).
+// Development convenience only: it sends the MIME types an offline web
+// app needs and refuses every path outside app/.
 
+import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { createReadStream, existsSync, statSync } from 'node:fs';
-import { dirname, extname, join, resolve } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), 'app');
-const PORT = Number(process.env.PORT ?? 8080);
+const root = resolve(fileURLToPath(new URL('./app', import.meta.url)));
+const argv = process.argv.slice(2);
+const portFlag = argv.indexOf('--port');
+const wanted = portFlag === -1 ? 8080 : Number(argv[portFlag + 1]);
+const port = Number.isInteger(wanted) && wanted > 0 && wanted < 65536 ? wanted : 8080;
 
-const MIME: Record<string, string> = {
+const MIME = {
   '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
   '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
   '.txt': 'text/plain; charset=utf-8',
 };
 
-function safePath(urlPath: string): string | null {
-  const cleaned = decodeURIComponent(urlPath.split('?')[0]);
-  const rel = cleaned === '/' ? 'index.html' : cleaned.replace(/^\/+/, '');
-  const full = resolve(APP_DIR, rel);
-  if (!full.startsWith(APP_DIR + '/') && full !== APP_DIR) return null;
-  return full;
-}
-
 const server = createServer((req, res) => {
-  const target = safePath(req.url ?? '/');
-  if (target === null || !existsSync(target) || !statSync(target).isFile()) {
-    res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('not found\n');
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
+  } catch {
+    res.writeHead(400).end('bad request');
+    return;
+  }
+  if (pathname.endsWith('/')) pathname += 'index.html';
+  const file = resolve(join(root, normalize(pathname)));
+  if (file !== root && !file.startsWith(root + sep)) {
+    res.writeHead(403).end('forbidden');
+    return;
+  }
+  let size;
+  try {
+    const st = statSync(file);
+    if (!st.isFile()) throw new Error('not a file');
+    size = st.size;
+  } catch {
+    res.writeHead(404).end('not found');
     return;
   }
   res.writeHead(200, {
-    'content-type': MIME[extname(target)] ?? 'application/octet-stream',
+    'content-type': MIME[extname(file).toLowerCase()] ?? 'application/octet-stream',
+    'content-length': size,
     'cache-control': 'no-store',
   });
-  createReadStream(target).pipe(res);
-});
-
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Vice Cover Studio serving app/ at http://localhost:${PORT}/`);
+  createReadStream(file).pipe(res);
+}).listen(port, '127.0.0.1', () => {
+  console.log(`Vice Cover Studio is on http://localhost:${port}`);
 });

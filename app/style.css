@@ -1,247 +1,247 @@
-/* Vice Cover Studio — editor chrome. Dark neon theme, single column of
-   controls beside a live canvas preview. No web fonts here: the two
-   shipped families are declared in @font-face below and used by the
-   canvas renderer for the cover lettering. */
+/* Vice Cover Studio — editor chrome. Dark dusk theme with a neon pink accent.
+   The cover art itself is painted on canvas by app/src/cover.js; this file
+   only styles the tool around it. */
 
 @font-face {
-  font-family: "Vice Display";
-  src: url("fonts/NotoSansDisplay-CondensedBlack.ttf") format("truetype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Vice Display";
-  src: url("fonts/NotoSansDisplay-CondensedBold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Vice Sans";
-  src: url("fonts/NotoSans-Regular.ttf") format("truetype");
+  font-family: "ViceSans";
+  src: url("fonts/LiberationSans-Regular.ttf") format("truetype");
   font-weight: 400;
-  font-style: normal;
   font-display: swap;
 }
-
 @font-face {
-  font-family: "Vice Sans";
-  src: url("fonts/NotoSans-Bold.ttf") format("truetype");
+  font-family: "ViceSans";
+  src: url("fonts/LiberationSans-Bold.ttf") format("truetype");
   font-weight: 700;
-  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "ViceDisplay";
+  src: url("fonts/ViceDisplay-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "ViceDisplay";
+  src: url("fonts/ViceDisplay-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
   font-display: swap;
 }
 
 :root {
-  --ink: #f2eef5;
-  --ink-dim: #b9b0c4;
-  --paper: #120a1a;
-  --card: #1d1226;
-  --card-2: #261736;
-  --line: #3a2749;
-  --pink: #ff2e88;
-  --cyan: #00e5ff;
-  --amber: #ffb02e;
+  --ink: #f4eef7;
+  --ink-dim: #b9a8c4;
+  --page: #12081c;
+  --card: #1e0f2b;
+  --card-2: #271338;
+  --line: #3d2352;
+  --pink: #ff4d9d;
+  --pink-soft: #ff7fb8;
+  --amber: #ffb347;
+  --cyan: #39e6ff;
   --radius: 14px;
 }
 
 * { box-sizing: border-box; }
 
-html, body { margin: 0; padding: 0; }
-
 body {
+  margin: 0;
   background:
-    radial-gradient(900px 500px at 85% -10%, rgba(255, 46, 136, 0.22), transparent 60%),
-    radial-gradient(700px 500px at -10% 0%, rgba(0, 229, 255, 0.14), transparent 55%),
-    var(--paper);
+    radial-gradient(1100px 500px at 85% -10%, rgba(255, 77, 157, 0.28), transparent 60%),
+    radial-gradient(900px 480px at -10% 0%, rgba(57, 230, 255, 0.14), transparent 55%),
+    var(--page);
   color: var(--ink);
-  font-family: "Vice Sans", system-ui, sans-serif;
+  font-family: "ViceSans", system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.45;
-  min-height: 100vh;
 }
 
-.topbar {
+.masthead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--line);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px 20px 10px;
 }
 
 .brand { display: flex; align-items: center; gap: 14px; }
 
 .brand-mark {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--pink), #ff7a1a 55%, var(--amber));
-  color: #1a0410;
-  font-family: "Vice Display", sans-serif;
-  font-weight: 900;
-  font-size: 22px;
-  letter-spacing: 0.5px;
+  font-family: "ViceDisplay", sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 1px;
+  color: #fff;
+  background: linear-gradient(135deg, #ff4d9d 0%, #ff8a3d 55%, #7b2ff7 100%);
+  box-shadow: 0 6px 24px rgba(255, 77, 157, 0.45);
 }
 
-.brand h1 {
+h1 {
   margin: 0;
-  font-family: "Vice Display", sans-serif;
-  font-weight: 900;
-  font-size: 26px;
-  letter-spacing: 0.4px;
+  font-family: "ViceDisplay", sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
-.brand p { margin: 2px 0 0; color: var(--ink-dim); font-size: 13px; }
+.tagline { margin: 2px 0 0; color: var(--ink-dim); font-size: 14px; }
 
-.workspace {
+.masthead-side { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pill {
+  display: inline-block;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-dim);
+  font-size: 12.5px;
+}
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 20px 8px;
   display: grid;
-  grid-template-columns: minmax(320px, 420px) 1fr;
+  grid-template-columns: 380px 1fr;
   gap: 18px;
-  padding: 18px 22px;
   align-items: start;
 }
 
 .panel {
-  background: var(--card);
+  background: linear-gradient(180deg, var(--card), #180b25);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 18px;
+  padding: 20px;
 }
 
-.controls h2 {
-  margin: 20px 0 8px;
-  font-family: "Vice Display", sans-serif;
-  font-size: 17px;
-  letter-spacing: 0.6px;
+.controls h2, .stage-head h2 {
+  margin: 18px 0 8px;
+  font-family: "ViceDisplay", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--amber);
+  color: var(--pink-soft);
 }
-
 .controls h2:first-child { margin-top: 0; }
 
-.hint { color: var(--ink-dim); font-size: 13px; margin: 6px 0 10px; }
+.hint { color: var(--ink-dim); font-size: 13px; margin: 8px 0; }
 
-.row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-
-.btn, .tile, .chip, .file-btn {
-  font-family: "Vice Sans", sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  background: var(--card-2);
+.chip {
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 9px 12px;
+  background: var(--card-2);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 13.5px;
   cursor: pointer;
 }
-
-.btn:hover, .tile:hover, .chip:hover, .file-btn:hover { border-color: var(--pink); }
-
-.btn.primary {
-  background: linear-gradient(135deg, var(--pink), #ff7a1a);
-  border: none;
+.chip:hover { border-color: var(--pink); }
+.chip:focus-visible, .btn:focus-visible, .file-btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+.chip.on {
+  background: var(--pink);
+  border-color: var(--pink);
   color: #fff;
   font-weight: 700;
-  padding: 11px 20px;
-  font-size: 15px;
 }
 
-.tile.on, .chip.on {
-  border-color: var(--cyan);
-  background: #12303a;
-  box-shadow: 0 0 0 1px var(--cyan) inset;
+.btn {
+  display: inline-block;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.btn.primary {
+  background: linear-gradient(90deg, #ff4d9d, #ff8a3d);
+  color: #fff;
+  font-size: 16px;
+  box-shadow: 0 6px 22px rgba(255, 77, 157, 0.35);
+}
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
 }
 
-.chip { border-radius: 999px; padding: 7px 13px; }
-
-.panel-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 10px; }
-
-.file-btn { display: inline-block; }
-.file-btn input { display: none; }
+.file-btn {
+  display: block;
+  text-align: center;
+  background: var(--card-2);
+  border: 1px dashed var(--pink);
+  border-radius: 10px;
+  padding: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.file-btn:hover { background: #2f1845; }
 
 .field { display: block; margin: 10px 0; font-size: 13px; color: var(--ink-dim); }
-
-.field input, .field select {
+.field input[type="text"], .field select {
   display: block;
   width: 100%;
   margin-top: 5px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 10px 11px;
+  border-radius: 9px;
   border: 1px solid var(--line);
-  background: #150d1f;
+  background: #150a20;
   color: var(--ink);
-  font-family: "Vice Sans", sans-serif;
+  font: inherit;
   font-size: 15px;
 }
+.field input[type="range"] { width: 100%; accent-color: var(--pink); }
 
-.field input:focus, .field select:focus {
-  outline: 2px solid var(--cyan);
-  outline-offset: 1px;
-}
+.slider-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-.slider-row {
-  display: grid;
-  grid-template-columns: 96px 1fr 52px;
+.stage-head {
+  display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 10px 0;
-  font-size: 13px;
-  color: var(--ink-dim);
+  justify-content: space-between;
 }
+.stage-head h2 { margin: 0; }
 
-.slider-row output { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
-
-input[type="range"] { width: 100%; accent-color: var(--pink); }
-
-.status {
-  margin: 14px 0 0;
-  padding: 10px 12px;
+.stage-box {
+  margin-top: 12px;
   border-radius: 10px;
-  background: #150d1f;
-  border: 1px dashed var(--line);
-  font-size: 13px;
-  color: var(--ink-dim);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #0a0512;
 }
+.stage-box canvas { display: block; width: 100%; height: auto; }
 
-.preview { position: sticky; top: 14px; }
-
-.stage-wrap { display: grid; place-items: center; gap: 10px; }
-
-#stage {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  cursor: grab;
-  touch-action: none;
-  background: #241a2e;
-}
-
-#stage:active { cursor: grabbing; }
-
-.stage-caption { margin: 0; color: var(--ink-dim); font-size: 13px; text-align: center; }
-
-.notes { margin: 16px 0 0; padding-left: 18px; color: var(--ink-dim); font-size: 13px; }
-.notes li { margin: 4px 0; }
+.feature-list { margin: 14px 0 0; padding-left: 18px; color: var(--ink-dim); font-size: 14px; }
+.feature-list li { margin: 6px 0; }
+.feature-list strong { color: var(--ink); }
 
 .foot {
-  padding: 16px 22px 26px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 20px 28px;
   color: var(--ink-dim);
   font-size: 12.5px;
-  text-align: center;
 }
 
-@media (max-width: 900px) {
-  .workspace { grid-template-columns: 1fr; }
-  .preview { position: static; }
-  .brand h1 { font-size: 21px; }
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  h1 { font-size: 24px; }
 }
