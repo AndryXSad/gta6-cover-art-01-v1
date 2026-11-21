@@ -23,7 +23,14 @@ const TYPES: Record<string, string> = {
 };
 
 const server = createServer((req, res) => {
-  const path = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
+  let path;
+  try {
+    path = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
+  } catch {
+    res.writeHead(400, { 'content-type': 'text/plain' });
+    res.end('bad request\n');
+    return;
+  }
   const file = join(root, path === '/' ? 'index.html' : path);
   if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) {
     res.writeHead(404, { 'content-type': 'text/plain' });

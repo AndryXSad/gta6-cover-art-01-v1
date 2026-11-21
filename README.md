@@ -35,15 +35,16 @@ node serve.ts
 ```
 
 Everything runs in your browser. Photos are read on your machine and are
-never uploaded.
+never uploaded. Tip: Ctrl/Cmd+Enter exports the cover at the chosen size
+without reaching for the button.
 
 ## Originality
 
 All artwork is made by this app at render time. It uses no Rockstar Games
 logo, wordmark, official artwork, character or font. The type is
-Liberation Sans, shipped under `app/fonts/` under the SIL Open Font
-License 1.1 (`app/fonts/OFL.txt`). The sample photos under `app/samples/`
-were made with an image model and are free to use.
+Liberation Sans and Noto Sans Display, shipped under `app/fonts/` under
+the SIL Open Font License 1.1 (`app/fonts/OFL.txt`). The sample photos
+under `app/samples/` were made with an image model and are free to use.
 
 ## Entry
 

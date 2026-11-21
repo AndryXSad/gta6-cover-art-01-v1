@@ -1,7 +1,9 @@
 // Vice Cover Studio — editor wiring.
-// Owns the editor state, loads the user's photos (or the bundled samples),
-// keeps the live preview in sync, and exports the finished cover as PNG.
-// Photos are read on this machine only; nothing is uploaded anywhere.
+//
+// Owns the editor state, loads the user's photos (or the bundled
+// samples), keeps the live preview in sync, and exports the finished
+// cover as a PNG. Photos are read on this machine only; nothing is
+// uploaded anywhere.
 
 (function () {
   'use strict';
@@ -47,6 +49,8 @@
     });
   }
 
+  // Re-render the preview canvas at the chosen export aspect ratio,
+  // scaled to a 960px-wide preview.
   function render() {
     var size = SIZES[state.sizeKey];
     var scale = 960 / size.w;
@@ -113,13 +117,18 @@
     reader.readAsDataURL(file);
   }
 
+  // Render the cover at full export size and trigger a PNG download.
   function exportCover(sizeKey) {
     var key = sizeKey || state.sizeKey;
     var size = SIZES[key];
     var canvas = window.ViceCover.renderExport(state, size);
     return new Promise(function (resolve) {
       canvas.toBlob(function (blob) {
-        if (!blob) { resolve(null); return; }
+        if (!blob) {
+          note.textContent = 'Export failed: the browser could not make a PNG. Try again.';
+          resolve(null);
+          return;
+        }
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;

@@ -9,7 +9,7 @@
 <body>
 <header class="topbar">
   <div class="brand">
-    <span class="brand-mark">&#9733;</span>
+    <span class="brand-mark" aria-hidden="true">&#9733;</span>
     <div>
       <h1>VICE COVER STUDIO</h1>
       <p>Turn your photo into a sunset-neon poster cover. Offline &mdash; photos never leave your machine.</p>
@@ -74,8 +74,8 @@
     <p class="hint">Pick a panel, then drag it on the preview to move the photo, or scroll to zoom.</p>
     <div class="panel-picker" id="panelPicker"></div>
     <div class="slider-row">
-      <label for="zoomRange">Zoom <span id="zoomVal">1.20&times;</span></label>
-      <input id="zoomRange" type="range" min="1" max="3" step="0.01" value="1.2">
+      <label for="zoomRange">Zoom <span id="zoomVal">1.05&times;</span></label>
+      <input id="zoomRange" type="range" min="1" max="3" step="0.01" value="1.05">
     </div>
     <div class="slider-row">
       <label for="panXRange">Move left / right</label>
@@ -135,7 +135,7 @@
       </select>
     </div>
     <button id="exportBtn2" class="btn-primary wide" type="button">Export PNG</button>
-    <p id="exportNote" class="hint" role="status"></p>
+    <p id="exportNote" class="hint" role="status" aria-live="polite"></p>
   </section>
 
   <section class="panel preview" aria-label="Live preview">
@@ -144,7 +144,7 @@
       <span id="previewDims" class="dims">1080 &times; 1080</span>
     </div>
     <div class="canvas-wrap">
-      <canvas id="stage" width="960" height="960"></canvas>
+      <canvas id="stage" width="960" height="960" role="img" aria-label="Live preview of your poster cover"></canvas>
     </div>
     <p class="hint">Drag a panel to reposition its photo &middot; scroll over it to zoom &middot; everything renders on your device.</p>
     <p class="fineprint">Original artwork made by this app. No Rockstar Games logos, artwork, characters or fonts.

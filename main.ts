@@ -47,6 +47,11 @@ const shots = existsSync(shotsDir)
 if (shots.length < 3 || shots.length > 4) {
   fail(`screenshots/ holds ${shots.length} images, need 3 or 4`);
 }
+for (const shot of shots) {
+  if (!statSync(join(shotsDir, shot)).isFile()) {
+    fail(`screenshots/${shot} is not a regular file`);
+  }
+}
 
 mkdirSync(outputDir, { recursive: true });
 cpSync(appDir, join(outputDir, 'app'), { recursive: true });

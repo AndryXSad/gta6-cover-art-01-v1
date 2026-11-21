@@ -1,14 +1,15 @@
 // Vice Cover Studio — cover renderer.
-// Draws a multi-panel, sunset/neon-graded poster cover onto any 2d canvas
-// from the editor state: photos, per-panel crop, layout, grade and caption.
-// No network, no external assets: only the photos the user loaded and the
-// fonts shipped under app/fonts/.
+//
+// Paints a multi-panel, sunset/neon-graded poster cover onto any 2d
+// canvas from the editor state: the photos, each panel's crop, the
+// layout, the grade and the caption. Nothing here touches the network:
+// only the photos the user loaded and the fonts shipped in app/fonts/.
 
 (function () {
   'use strict';
 
-  // A grade is the whole colour story of a cover: the sky wash laid over
-  // every photo, the frame colour, the caption ink and its glow.
+  // One grade is the cover's whole colour story: the sky wash laid over
+  // every photo, the panel frame, the caption ink and its glow.
   var GRADES = {
     sunset: {
       wash: ['rgba(255,122,26,0.34)', 'rgba(255,46,136,0.30)', 'rgba(123,47,247,0.22)'],
@@ -48,17 +49,23 @@
     },
   };
 
-  // Panel rectangles for each layout, in fractions of the cover. Every
-  // layout leaves an outer margin and a gutter so the panels read as a
+  // Panel rectangles for a layout, as fractions of the cover. Every
+  // layout keeps an outer margin and a gutter, so the panels read as a
   // poster grid instead of one flat photo.
   function layoutRects(name, W, H) {
     var m = Math.round(Math.min(W, H) * 0.028);
     var g = Math.round(Math.min(W, H) * 0.016);
-    var x0 = m, y0 = m, x1 = W - m, y1 = H - m;
-    var w = x1 - x0, h = y1 - y0;
+    var x0 = m;
+    var y0 = m;
+    var x1 = W - m;
+    var y1 = H - m;
+    var w = x1 - x0;
+    var h = y1 - y0;
     var third = (w - 2 * g) / 3;
     var half = (w - g) / 2;
+
     if (name === 'strip') {
+      // Three tall columns side by side.
       return [
         { x: x0, y: y0, w: third, h: h },
         { x: x0 + third + g, y: y0, w: third, h: h },
@@ -66,6 +73,7 @@
       ];
     }
     if (name === 'hero') {
+      // One wide hero on top, two small panels below.
       var topH = (h - g) * 0.62;
       return [
         { x: x0, y: y0, w: w, h: topH },
@@ -74,6 +82,7 @@
       ];
     }
     if (name === 'quad') {
+      // Four equal corners.
       var halfH = (h - g) / 2;
       return [
         { x: x0, y: y0, w: half, h: halfH },
@@ -82,7 +91,7 @@
         { x: x0 + half + g, y: y0 + halfH + g, w: half, h: halfH },
       ];
     }
-    // 'trio': tall hero panel left, two stacked panels right.
+    // 'trio': tall hero panel on the left, two stacked panels right.
     var heroW = (w - g) * 0.58;
     var stackH = (h - g) / 2;
     return [
@@ -92,26 +101,29 @@
     ];
   }
 
-  // Deterministic speckle so the grain looks the same on every export.
+  // Deterministic speckle, so the grain looks identical on every export.
   function mulberry32(seed) {
     var a = seed >>> 0;
     return function () {
-      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
       var t = Math.imul(a ^ (a >>> 15), 1 | a);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
 
-  // Draw one photo into one panel: cover-fit, then the panel's zoom and
-  // pan. Pan is a -1..1 fraction of the spare room the zoom leaves.
+  // Draw one photo into one panel: cover-fit first, then the panel's own
+  // zoom and pan. Pan is a -1..1 fraction of the spare room the zoom
+  // leaves on each axis.
   function drawPhotoInto(ctx, img, rect, panel) {
     var zoom = panel.zoom || 1;
     var iw = img.naturalWidth || img.width;
     var ih = img.naturalHeight || img.height;
     if (!iw || !ih) return;
     var scale = Math.max(rect.w / iw, rect.h / ih) * zoom;
-    var dw = iw * scale, dh = ih * scale;
+    var dw = iw * scale;
+    var dh = ih * scale;
     var dx = rect.x + (rect.w - dw) / 2 + (panel.x || 0) * Math.max(0, (dw - rect.w) / 2);
     var dy = rect.y + (rect.h - dh) / 2 + (panel.y || 0) * Math.max(0, (dh - rect.h) / 2);
     ctx.save();
@@ -122,7 +134,7 @@
     ctx.restore();
   }
 
-  // A diagonal sunset wash plus a vignette, laid over one panel.
+  // A diagonal sunset wash plus a soft vignette, laid over one panel.
   function gradePanel(ctx, rect, grade) {
     ctx.save();
     ctx.beginPath();
@@ -146,8 +158,8 @@
   }
 
   // The caption: a big bold title with a heavy outline, a letterspaced
-  // subtitle, and a small original star badge. Lettering styles change
-  // the title's treatment only; the words stay the user's.
+  // subtitle, and a small original star badge. The lettering style
+  // changes only the title's treatment; the words stay the user's.
   function drawCaption(ctx, W, H, state, grade) {
     var title = (state.title || '').trim().toUpperCase();
     var sub = (state.subtitle || '').trim().toUpperCase();
@@ -208,23 +220,29 @@
       ctx.restore();
     }
 
-    // Small original badge, top corner opposite the caption.
+    // Small original badge, in the corner opposite the caption.
+    // The pill is sized from the measured text so the label never
+    // overflows its rounded background at any export size.
     var b = Math.round(34 * scale + 10);
-    var bx = Math.round(W * 0.035), by = bottom ? Math.round(H * 0.035) : H - b - Math.round(H * 0.035);
+    var bx = Math.round(W * 0.035);
+    var by = bottom ? Math.round(H * 0.035) : H - b - Math.round(H * 0.035);
     ctx.save();
-    ctx.fillStyle = 'rgba(10,4,20,0.66)';
-    ctx.beginPath();
-    ctx.roundRect(bx, by, b * 3.7, b, b / 2);
-    ctx.fill();
-    ctx.fillStyle = grade.badge;
     ctx.font = '700 ' + Math.round(b * 0.52) + 'px "Vice Sans", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('\u2605  VC STUDIO', bx + b * 0.32, by + b / 2 + 1);
+    var label = '\u2605  VC STUDIO';
+    var pad = Math.round(b * 0.32);
+    var pillW = Math.ceil(ctx.measureText(label).width) + pad * 2;
+    ctx.fillStyle = 'rgba(10,4,20,0.66)';
+    ctx.beginPath();
+    ctx.roundRect(bx, by, pillW, b, b / 2);
+    ctx.fill();
+    ctx.fillStyle = grade.badge;
+    ctx.fillText(label, bx + pad, by + b / 2 + 1);
     ctx.restore();
   }
 
-  // Light print grain over the whole cover.
+  // A light print grain over the whole cover.
   function grain(ctx, W, H) {
     var rnd = mulberry32(20261119);
     ctx.save();
@@ -238,8 +256,9 @@
     ctx.restore();
   }
 
-  // Render the whole cover. `photos` is an array of loaded Image elements
-  // (or null slots); `state.panels[i]` picks the photo, zoom and pan.
+  // Render the whole cover. `state.photos` holds the loaded Image
+  // elements (or null slots); `state.panels[i]` picks the photo, zoom
+  // and pan for panel i.
   function drawCover(ctx, W, H, state) {
     var grade = GRADES[state.grade] || GRADES.sunset;
     ctx.save();
